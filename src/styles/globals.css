@@ -1,0 +1,37 @@
+@import "react-datepicker/dist/react-datepicker.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===============================
+   🌐 Root Variables (Default Light)
+   =============================== */
+:root {
+  --background: #F6FBF4;         /* hijau sangat muda (light background) */
+  --foreground: #1A1A1A;         /* textgelap */
+}
+
+/* ===============================
+   🌙 Dark Mode (Toggle Class-Based)
+   =============================== */
+.dark {
+  --background: #0D1B16;         /* gelapagelap */
+  --foreground: #F9FAF9;         /* textterang */
+}
+
+/* ===============================
+   📱 Layout & Typography
+   =============================== */
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  @apply font-sans text-base leading-relaxed;
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}

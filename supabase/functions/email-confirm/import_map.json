@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "path/dirname": "https://deno.land/std@0.192.0/path/dirname.ts",
+    "path/join": "https://deno.land/std@0.192.0/path/join.ts"
+  }
+}
