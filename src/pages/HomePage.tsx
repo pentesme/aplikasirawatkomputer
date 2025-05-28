@@ -48,10 +48,10 @@ const HomePage = () => {
 
         {/* Pengantar */}
         <section className="space-y-4">
-          <h2 className="text-2xl font-bold text-hijautua dark:text-hijaulakeabu">
+          <h2 className="text-2xl font-bold text-[var(--foreground)]">
             Layanan Rawat Komputer #PianDirumahAja lahir karena:
           </h2>
-          <ul className="text-left space-y-2 list-disc list-inside">
+          <ul className="text-left space-y-2 list-disc list-inside text-[var(--foreground)]">
             <li>
               Ulun suka membantu orang. Kali ini dengan pengetahuan & keterampilan yang
               Allah titipi dibidang Komputer.
@@ -71,20 +71,18 @@ const HomePage = () => {
         <div>
           <Link
             to="/client"
-            className="inline-block px-6 py-3 rounded font-semibold transition-colors
-              bg-hijautua text-hijaulakeabu hover:opacity-90
-              dark:bg-hijaulakeabu dark:text-hijautua"
+            className="btn-primary inline-block"
           >
             Buat Janji
           </Link>
         </div>
 
         {/* Informasi Layanan */}
-        <section className="bg-hijaulakeabu/20 dark:bg-hijautua/20 p-6 rounded-md text-left space-y-4">
-          <h2 className="text-xl font-bold text-hijautua dark:text-hijaulakeabu">
+        <section className="card text-left space-y-4">
+          <h2 className="text-xl font-bold text-[var(--foreground)]">
             🧾 Informasi Layanan (Hanya Windows OS)
           </h2>
-          <ul className="list-disc list-inside space-y-2">
+          <ul className="list-disc list-inside space-y-2 text-[var(--foreground)]">
             <li>
               Ulun hanyalah orang yang berhasil merawat laptop dari 2011 hingga sekarang,
               dan masih mampu menjalankan aplikasi berat.
@@ -111,11 +109,13 @@ const HomePage = () => {
 
         {/* Review Carousel */}
         <section className="mt-8">
-          <h2 className="text-xl font-semibold text-hijautua dark:text-hijaulakeabu mb-4">
+          <h2 className="text-xl font-semibold text-[var(--foreground)] mb-4">
             Apa Kata Mereka
           </h2>
-          <div className="relative p-6 bg-hijaulakeabu/10 dark:bg-hijautua/10 rounded shadow text-hijautua dark:text-hijaulakeabu">
-            <p className="italic max-w-md mx-auto">"{reviews[currentIndex]}"</p>
+          <div className="card text-center">
+            <p className="italic max-w-md mx-auto text-[var(--foreground)]">
+              "{reviews[currentIndex]}"
+            </p>
           </div>
         </section>
       </main>

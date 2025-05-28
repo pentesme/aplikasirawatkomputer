@@ -11,7 +11,7 @@ const NotFound = () => {
         <h1 className="text-xl font-semibold text-red-600">
           404 – Halaman tidak ditemukan
         </h1>
-        <p className="text-hijautua dark:text-hijaulakeabu">
+        <p className="text-[var(--foreground)]">
           Sepertinya alamat yang Pian cari tidak tersedia.
         </p>
       </main>

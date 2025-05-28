@@ -11,7 +11,7 @@ type Props = {
 const ClientFormApps = ({ fields, append, remove, register }: Props) => {
   return (
     <div>
-      <label className="block mb-1 font-medium text-hijautua">
+      <label className="block mb-1 font-medium text-[var(--foreground)]">
         Aplikasi Tambahan (max 10)
       </label>
 
@@ -21,11 +21,11 @@ const ClientFormApps = ({ fields, append, remove, register }: Props) => {
             type="text"
             {...register(`aplikasi_custom.${index}.nama`)}
             placeholder="Nama Aplikasi"
-            className="flex-1 p-2 border rounded"
+            className="flex-1 p-2 border rounded bg-transparent text-[var(--foreground)] placeholder:text-[var(--subtext)]"
           />
           <select
             {...register(`aplikasi_custom.${index}.versi`)}
-            className="w-32 p-2 border rounded"
+            className="w-32 p-2 border rounded bg-transparent text-[var(--foreground)]"
           >
             <option value="Original">Original</option>
             <option value="Crack">Crack</option>
@@ -44,7 +44,7 @@ const ClientFormApps = ({ fields, append, remove, register }: Props) => {
         <button
           type="button"
           onClick={() => append({ nama: "", versi: "Original" })}
-          className="text-sm text-hijautua hover:underline mt-2"
+          className="text-sm text-[var(--foreground)] hover:underline mt-2"
         >
           + Tambah Aplikasi
         </button>

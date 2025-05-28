@@ -1,18 +1,5 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "../../lib/supabase"
-
-interface Holiday {
-  id: string
-  date: string
-  reason?: string
-  repeat: boolean
-  jam?: string | null
-}
-
-interface Props {
-  holidays: Holiday[]
-  onUpdate: () => void
-}
 
 const SLOT_JAM = [
   "09.00–11.00",
@@ -22,38 +9,79 @@ const SLOT_JAM = [
   "19.00–21.00",
 ]
 
-const HolidayManager = ({ holidays, onUpdate }: Props) => {
-  const [newHoliday, setNewHoliday] = useState<Partial<Holiday>>({ date: "", jam: "", reason: "", repeat: false })
+const WEEKDAYS = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"]
+
+interface Holiday {
+  id: string
+  type: "date" | "weekday"
+  tanggal: string
+  jam?: string | null
+  reason?: string
+  repeat: boolean
+}
+
+interface Props {
+  onUpdate: () => void
+}
+
+const HolidayManager = ({ onUpdate }: Props) => {
+  const [holidays, setHolidays] = useState<Holiday[]>([])
+  const [newHoliday, setNewHoliday] = useState<Partial<Holiday>>({
+    tanggal: "",
+    jam: "",
+    reason: "",
+    repeat: false,
+  })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingHoliday, setEditingHoliday] = useState<Partial<Holiday>>({})
 
-  const addHoliday = async () => {
-    if (!newHoliday?.date || newHoliday.date.trim() === "") {
-      alert("Tanggal wajib diisi.")
-      return
+  const fetchHolidays = async () => {
+    const { data, error } = await supabase.from("holidays").select("*")
+    if (!error && data) {
+      const formatted = data.map((h) => ({
+        ...h,
+        tanggal: h.tanggal.trim().toLowerCase(),
+      }))
+      setHolidays(formatted.sort((a, b) => a.tanggal.localeCompare(b.tanggal)))
+    } else {
+      console.error("❌ gagal ambil libur", error)
     }
-    const { error } = await supabase
-      .from("holidays")
-      .insert({
-        date: newHoliday.date,
-        jam: newHoliday.jam || null,
-        reason: newHoliday.reason || null,
-        repeat: newHoliday.repeat || false,
-      })
+  }
 
+  useEffect(() => {
+    fetchHolidays()
+  }, [])
+
+  const addHoliday = async () => {
+    const tgl = newHoliday.tanggal?.trim().toLowerCase()
+    if (!tgl) return alert("Tanggal wajib diisi.")
+
+    const payload = {
+      type: newHoliday.repeat ? "weekday" : "date",
+      tanggal: tgl,
+      jam: newHoliday.jam || null,
+      reason: newHoliday.reason || null,
+      repeat: !!newHoliday.repeat,
+    }
+
+    const { error } = await supabase.from("holidays").insert(payload)
     if (error) {
-      console.error("❌ Gagal menambahkan hari libur:", error.message)
+      console.error("❌ Gagal tambah libur:", error)
       alert("Gagal menambahkan hari libur.")
       return
     }
 
-    setNewHoliday({ date: "", jam: "", reason: "", repeat: false })
+    setNewHoliday({ tanggal: "", jam: "", reason: "", repeat: false })
+    fetchHolidays()
     onUpdate()
   }
 
   const deleteHoliday = async (id: string) => {
     const { error } = await supabase.from("holidays").delete().eq("id", id)
-    if (!error) onUpdate()
+    if (!error) {
+      fetchHolidays()
+      onUpdate()
+    }
   }
 
   const startEdit = (holiday: Holiday) => {
@@ -67,123 +95,153 @@ const HolidayManager = ({ holidays, onUpdate }: Props) => {
   }
 
   const saveEdit = async () => {
-    if (!editingId || !editingHoliday.date) return
-    const { error } = await supabase.from("holidays").update({
-      date: editingHoliday.date,
+    if (!editingId || !editingHoliday.tanggal) return
+
+    const payload = {
+      type: editingHoliday.repeat ? "weekday" : "date",
+      tanggal: editingHoliday.tanggal.trim().toLowerCase(),
       jam: editingHoliday.jam || null,
       reason: editingHoliday.reason || null,
-      repeat: editingHoliday.repeat || false,
-    }).eq("id", editingId)
+      repeat: !!editingHoliday.repeat,
+    }
+
+    const { error } = await supabase.from("holidays").update(payload).eq("id", editingId)
     if (!error) {
       setEditingId(null)
       setEditingHoliday({})
+      fetchHolidays()
       onUpdate()
     }
   }
 
+  const renderTanggalInput = (
+    current: Partial<Holiday>,
+    setCurrent: (val: Partial<Holiday>) => void
+  ) => {
+    return current.repeat ? (
+      <select
+        value={current.tanggal || ""}
+        onChange={(e) => setCurrent({ ...current, tanggal: e.target.value })}
+        className="p-2 rounded text-sm bg-transparent text-[var(--foreground)]"
+      >
+        <option value="">Pilih Hari</option>
+        {WEEKDAYS.map((hari) => (
+          <option key={hari} value={hari}>
+            {hari.charAt(0).toUpperCase() + hari.slice(1)}
+          </option>
+        ))}
+      </select>
+    ) : (
+      <input
+        type="date"
+        value={current.tanggal || ""}
+        onChange={(e) => setCurrent({ ...current, tanggal: e.target.value })}
+        className="p-2 rounded text-sm bg-transparent text-[var(--foreground)]"
+      />
+    )
+  }
+
   return (
     <section className="mt-10">
-      <h2 className="text-xl font-bold text-hijautua dark:text-hijaulakeabu mb-4">Kelola Hari Libur</h2>
+      <h2 className="text-xl font-bold text-[var(--foreground)] mb-4">
+        Kelola Hari Libur
+      </h2>
 
+      {/* Form Tambah */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        <input
-          type="date"
-          value={newHoliday.date || ""}
-          onChange={(e) => setNewHoliday((prev) => ({ ...prev, date: e.target.value }))}
-          className="p-2 rounded text-sm"
-        />
+        {renderTanggalInput(newHoliday, setNewHoliday)}
         <select
           value={newHoliday.jam || ""}
-          onChange={(e) => setNewHoliday((prev) => ({ ...prev, jam: e.target.value }))}
-          className="p-2 rounded text-sm"
+          onChange={(e) => setNewHoliday({ ...newHoliday, jam: e.target.value })}
+          className="p-2 rounded text-sm bg-transparent text-[var(--foreground)]"
         >
           <option value="">Semua Slot</option>
           {SLOT_JAM.map((slot) => (
-            <option key={slot} value={slot}>{slot}</option>
+            <option key={slot} value={slot}>
+              {slot}
+            </option>
           ))}
         </select>
         <input
           type="text"
           placeholder="Alasan (opsional)"
           value={newHoliday.reason || ""}
-          onChange={(e) => setNewHoliday((prev) => ({ ...prev, reason: e.target.value }))}
-          className="p-2 rounded text-sm"
+          onChange={(e) => setNewHoliday({ ...newHoliday, reason: e.target.value })}
+          className="p-2 rounded text-sm bg-transparent text-[var(--foreground)] placeholder:text-[var(--subtext)]"
         />
-        <label className="flex items-center gap-1 text-sm">
+        <label className="flex items-center gap-1 text-sm text-[var(--foreground)]">
           <input
             type="checkbox"
             checked={!!newHoliday.repeat}
-            onChange={(e) => setNewHoliday((prev) => ({ ...prev, repeat: e.target.checked }))}
+            onChange={(e) => setNewHoliday({ ...newHoliday, repeat: e.target.checked })}
           />
           Berulang
         </label>
-        <button
-          onClick={addHoliday}
-          className="px-4 py-2 rounded bg-hijautua text-hijaulakeabu font-semibold"
-        >
+        <button onClick={addHoliday} className="btn-primary text-sm">
           Tambah
         </button>
       </div>
 
+      {/* Daftar Libur */}
       <ul className="space-y-2">
         {holidays.map((h) => (
-          <li key={h.id} className="bg-white/5 dark:bg-black/10 px-4 py-2 rounded">
+          <li key={h.id} className="card text-sm">
             {editingId === h.id ? (
-              <div className="flex flex-col md:flex-row gap-2 items-start md:items-center justify-between">
-                <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
+                {renderTanggalInput(editingHoliday, setEditingHoliday)}
+                <select
+                  value={editingHoliday.jam || ""}
+                  onChange={(e) =>
+                    setEditingHoliday((prev) => ({ ...prev, jam: e.target.value }))
+                  }
+                  className="p-2 rounded text-sm bg-transparent text-[var(--foreground)]"
+                >
+                  <option value="">Semua Slot</option>
+                  {SLOT_JAM.map((slot) => (
+                    <option key={slot} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Alasan"
+                  value={editingHoliday.reason || ""}
+                  onChange={(e) =>
+                    setEditingHoliday((prev) => ({ ...prev, reason: e.target.value }))
+                  }
+                  className="p-2 rounded text-sm bg-transparent text-[var(--foreground)] placeholder:text-[var(--subtext)]"
+                />
+                <label className="flex items-center gap-1 text-sm text-[var(--foreground)]">
                   <input
-                    type="date"
-                    value={editingHoliday.date || ""}
-                    onChange={(e) => setEditingHoliday((prev) => ({ ...prev, date: e.target.value }))}
-                    className="p-2 rounded text-sm"
+                    type="checkbox"
+                    checked={!!editingHoliday.repeat}
+                    onChange={(e) =>
+                      setEditingHoliday((prev) => ({ ...prev, repeat: e.target.checked }))
+                    }
                   />
-                  <select
-                    value={editingHoliday.jam || ""}
-                    onChange={(e) => setEditingHoliday((prev) => ({ ...prev, jam: e.target.value }))}
-                    className="p-2 rounded text-sm"
-                  >
-                    <option value="">Semua Slot</option>
-                    {SLOT_JAM.map((slot) => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Alasan"
-                    value={editingHoliday.reason || ""}
-                    onChange={(e) => setEditingHoliday((prev) => ({ ...prev, reason: e.target.value }))}
-                    className="p-2 rounded text-sm"
-                  />
-                  <label className="flex items-center gap-1 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={!!editingHoliday.repeat}
-                      onChange={(e) => setEditingHoliday((prev) => ({ ...prev, repeat: e.target.checked }))}
-                    />
-                    Berulang
-                  </label>
-                </div>
+                  Berulang
+                </label>
                 <div className="flex gap-2">
-                  <button onClick={saveEdit} className="text-green-500 text-sm hover:underline">Simpan</button>
-                  <button onClick={cancelEdit} className="text-gray-400 text-sm hover:underline">Batal</button>
+                  <button onClick={saveEdit} className="text-green-500 text-sm hover:underline">
+                    Simpan
+                  </button>
+                  <button onClick={cancelEdit} className="text-gray-400 text-sm hover:underline">
+                    Batal
+                  </button>
                 </div>
               </div>
             ) : (
               <div className="flex justify-between items-center">
-                <span className="text-sm">
-                  {h.date} {h.jam ? `(${h.jam})` : "(Semua Slot)"} {h.reason && `- ${h.reason}`} {h.repeat && `(berulang)`}
+                <span className="text-[var(--foreground)]">
+                  {h.tanggal} {h.jam ? `(${h.jam})` : "(Semua Slot)"}
+                  {h.reason && ` - ${h.reason}`} {h.repeat && "(berulang)"}
                 </span>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => startEdit(h)}
-                    className="text-blue-400 text-sm hover:underline"
-                  >
+                <div className="flex gap-2">
+                  <button onClick={() => startEdit(h)} className="text-blue-400 text-sm hover:underline">
                     Edit
                   </button>
-                  <button
-                    onClick={() => deleteHoliday(h.id)}
-                    className="text-red-400 text-sm hover:underline"
-                  >
+                  <button onClick={() => deleteHoliday(h.id)} className="text-red-400 text-sm hover:underline">
                     Hapus
                   </button>
                 </div>

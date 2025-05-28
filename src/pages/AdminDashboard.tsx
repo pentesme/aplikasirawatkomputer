@@ -21,27 +21,21 @@ interface Appointment {
   review?: string
 }
 
-interface Holiday {
-  id: string
-  date: string
-  reason?: string
-  repeat: boolean
-}
-
 const AdminDashboard = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [holidays, setHolidays] = useState<Holiday[]>([])
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>("all")
   const [filterDate, setFilterDate] = useState<Date | null>(null)
   const navigate = useNavigate()
 
+  // 🔐 Cek session login
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) navigate("/admin")
     })
   }, [navigate])
 
+  // 📅 Ambil data janji
   const fetchAppointments = async () => {
     setLoading(true)
     const { data, error } = await supabase
@@ -50,19 +44,21 @@ const AdminDashboard = () => {
       .order("tanggal", { ascending: true })
       .order("jam", { ascending: true })
 
-    if (!error && data) {
-      setAppointments(data as Appointment[])
-    }
+    if (!error && data) setAppointments(data as Appointment[])
     setLoading(false)
   }
 
+  // 📆 Ambil data hari libur (untuk sinkron dengan HolidayManager)
   const fetchHolidays = async () => {
     const { data, error } = await supabase
       .from("holidays")
       .select("*")
-      .order("date")
-    if (!error && data) {
-      setHolidays(data as Holiday[])
+      .order("tanggal", { ascending: true })
+
+    if (error) {
+      console.error("❌ gagal ambil libur", error)
+    } else {
+      console.log("✅ libur diambil:", data)
     }
   }
 
@@ -73,7 +69,9 @@ const AdminDashboard = () => {
 
   const filteredAppointments = appointments.filter((appt) => {
     const matchStatus = filterStatus === "all" || appt.status === filterStatus
-    const matchDate = !filterDate || new Date(appt.tanggal).toDateString() === filterDate.toDateString()
+    const matchDate =
+      !filterDate ||
+      new Date(appt.tanggal).toDateString() === filterDate.toDateString()
     return matchStatus && matchDate
   })
 
@@ -81,14 +79,16 @@ const AdminDashboard = () => {
     <>
       <Navbar />
       <main className="min-h-screen px-4 py-8 max-w-5xl mx-auto space-y-10">
-        <h1 className="text-2xl font-bold text-hijautua dark:text-hijaulakeabu text-center">
+        <h1 className="text-2xl font-bold text-center text-[var(--foreground)]">
           Admin Dashboard
         </h1>
 
-        {/* Filter Controls */}
+        {/* 🔎 Filter Kontrol */}
         <div className="flex flex-wrap gap-4 justify-center items-center">
           <div>
-            <label className="block text-sm text-hijautua dark:text-hijaulakeabu font-medium mb-1">Filter Status</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--foreground)]">
+              Filter Status
+            </label>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -102,7 +102,9 @@ const AdminDashboard = () => {
           </div>
 
           <div>
-            <label className="block text-sm text-hijautua dark:text-hijaulakeabu font-medium mb-1">Filter Tanggal</label>
+            <label className="block text-sm font-medium mb-1 text-[var(--foreground)]">
+              Filter Tanggal
+            </label>
             <DatePicker
               selected={filterDate}
               onChange={(date: Date | null) => setFilterDate(date)}
@@ -114,27 +116,24 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Daftar janji */}
+        {/* 📋 Daftar Janji */}
         <AppointmentList
           appointments={filteredAppointments}
           loading={loading}
           onUpdate={fetchAppointments}
         />
 
-        {/* Manajemen Hari Libur */}
-        <HolidayManager
-          holidays={holidays}
-          onUpdate={fetchHolidays}
-        />
+        {/* 📆 Manajemen Hari Libur */}
+        <HolidayManager onUpdate={fetchHolidays} />
 
-        {/* Tombol Logout */}
+        {/* 🔓 Logout */}
         <div className="pt-10 flex justify-center">
           <button
             onClick={async () => {
               await supabase.auth.signOut()
               navigate("/admin")
             }}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:opacity-90 text-sm font-semibold"
+            className="px-4 py-2 rounded bg-red-500 text-white hover:opacity-90 text-sm font-semibold"
           >
             Keluar Admin
           </button>

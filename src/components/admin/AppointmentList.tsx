@@ -123,7 +123,7 @@ const AppointmentList = ({ appointments, loading, onUpdate }: Props) => {
       {appointments.map((appt) => (
         <div
           key={appt.id}
-          className={`border-l-4 p-4 rounded shadow bg-white/10 dark:bg-black/10
+          className={`card border-l-4
             ${appt.status === "pending"
               ? "border-red-500"
               : appt.status === "confirmed"
@@ -164,13 +164,13 @@ const AppointmentList = ({ appointments, loading, onUpdate }: Props) => {
                 <>
                   <button
                     onClick={() => updateAndNotifyConfirmed(appt)}
-                    className="px-3 py-1 rounded bg-yellow-400 text-hijautua text-sm font-semibold"
+                    className="btn-yellow"
                   >
                     Konfirmasi
                   </button>
                   <button
                     onClick={() => deleteAppointment(appt.id)}
-                    className="px-3 py-1 rounded bg-red-500 text-white text-sm font-semibold"
+                    className="btn-red"
                   >
                     Hapus
                   </button>
@@ -180,13 +180,13 @@ const AppointmentList = ({ appointments, loading, onUpdate }: Props) => {
                 <>
                   <button
                     onClick={() => updateAndNotifySelesai(appt)}
-                    className="px-3 py-1 rounded bg-green-500 text-white text-sm font-semibold"
+                    className="btn-green"
                   >
                     Tandai Selesai
                   </button>
                   <button
                     onClick={() => deleteAppointment(appt.id)}
-                    className="px-3 py-1 rounded bg-red-500 text-white text-sm font-semibold"
+                    className="btn-red"
                   >
                     Hapus
                   </button>
@@ -195,7 +195,7 @@ const AppointmentList = ({ appointments, loading, onUpdate }: Props) => {
               {appt.status === "done" && (
                 <button
                   onClick={() => deleteAppointment(appt.id)}
-                  className="px-3 py-1 rounded bg-red-500 text-white text-sm font-semibold"
+                  className="btn-red"
                 >
                   Hapus
                 </button>

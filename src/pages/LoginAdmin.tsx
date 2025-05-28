@@ -34,7 +34,7 @@ const LoginAdmin = () => {
       <main className="min-h-screen flex items-center justify-center px-4">
         <form
           onSubmit={handleLogin}
-          className="bg-hijautua text-hijaulakeabu p-8 rounded-lg shadow-lg w-full max-w-md space-y-4"
+          className="bg-[var(--background)] text-[var(--foreground)] p-8 rounded-lg shadow-lg w-full max-w-md space-y-4"
         >
           <h1 className="text-xl font-bold text-center mb-2">Login Admin</h1>
 
@@ -44,7 +44,7 @@ const LoginAdmin = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full p-2 rounded bg-white/10 text-white placeholder:text-hijaulakeabu"
+            className="w-full p-2 rounded border border-gray-300 dark:border-gray-600 bg-transparent text-[var(--foreground)] placeholder:text-[var(--subtext)]"
           />
           <input
             type="password"
@@ -52,14 +52,14 @@ const LoginAdmin = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full p-2 rounded bg-white/10 text-white placeholder:text-hijaulakeabu"
+            className="w-full p-2 rounded border border-gray-300 dark:border-gray-600 bg-transparent text-[var(--foreground)] placeholder:text-[var(--subtext)]"
           />
 
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
           <button
             type="submit"
-            className="w-full bg-hijaulakeabu text-hijautua py-2 rounded hover:opacity-90 font-semibold"
+            className="btn-primary w-full"
           >
             Masuk
           </button>

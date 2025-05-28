@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { Menu, X, Moon, Sun } from "lucide-react"
 import { Link, useLocation } from "react-router-dom"
-import logo from "../assets/fav.png" // ganti kalau nama file beda
+import logo from "../assets/fav.png"
 
 const menuItems = [
   { name: "Home", path: "/" },
@@ -68,14 +68,23 @@ const Navbar = () => {
             </Link>
           ))}
 
-          {/* Toggle Theme */}
-          <button onClick={toggleTheme} className="ml-4" title="Ganti Tema">
-            {isDark ? (
-              <Sun className="w-5 h-5 text-kuninglidah hover:opacity-80" />
-            ) : (
-              <Moon className="w-5 h-5 text-hijaulakeabu hover:opacity-80" />
-            )}
-          </button>
+          {/* Toggle Theme Switch */}
+          <div className="flex items-center space-x-2 ml-4">
+            <span className="text-sm">{isDark ? "Dark" : "Light"}</span>
+            <button
+              onClick={toggleTheme}
+              title="Ganti Tema"
+              className={`w-10 h-5 flex items-center rounded-full p-1 transition-colors duration-300 ${
+                isDark ? "bg-kuninglidah" : "bg-hijaulakeabu"
+              }`}
+            >
+              <div
+                className={`bg-hijautua w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${
+                  isDark ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Burger Menu */}

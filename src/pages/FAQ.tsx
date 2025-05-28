@@ -52,13 +52,13 @@ const FaqPage = () => {
           {faqs.map((item, idx) => (
             <div
               key={idx}
-              className="border-b border-hijaulakeabu pb-4"
+              className="border-b border-[var(--subtext)] pb-4"
             >
               <button
                 onClick={() => toggleAccordion(idx)}
                 className="flex justify-between items-center w-full text-left"
               >
-                <span className="text-lg font-semibold text-hijautua">
+                <span className="text-lg font-semibold text-[var(--foreground)]">
                   {item.question}
                 </span>
                 <ChevronDown
@@ -68,7 +68,7 @@ const FaqPage = () => {
                 />
               </button>
               {openIndex === idx && (
-                <p className="mt-2 text-hijaulakeabu">
+                <p className="mt-2 text-[var(--subtext)]">
                   {item.answer}
                 </p>
               )}
@@ -78,12 +78,12 @@ const FaqPage = () => {
 
         {/* Seksi 3: Call to Action */}
         <section className="text-center">
-          <p className="mb-4 text-lg text-hijautua">
+          <p className="mb-4 text-lg text-[var(--foreground)]">
             Sudah yakin mau Ulun bantu?
           </p>
           <button
             onClick={() => navigate("/client")}
-            className="bg-hijautua text-hijaulakeabu px-6 py-3 rounded hover:bg-opacity-90"
+            className="btn-primary"
           >
             Buat Janji
           </button>

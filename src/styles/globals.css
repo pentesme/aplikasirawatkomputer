@@ -4,25 +4,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===============================
-   🌐 Root Variables (Default Light)
-   =============================== */
+/* =========================================
+   🌐 Root Variables (Default: Light Theme)
+   ========================================= */
 :root {
-  --background: #F6FBF4;         /* hijau sangat muda (light background) */
-  --foreground: #1A1A1A;         /* textgelap */
+  --background: #F6FBF4;         /* 🌞 hijau sangat muda (background terang) */
+  --foreground: #204B38;         /* teks utama light: hijau tua */
+  --subtext: #A3B5A1;            /* teks pendukung light: hijau keabu */
+  --button-bg: #204B38;          /* tombol utama light: hijau tua */
+  --button-text: #A3B5A1;        /* teks tombol light: hijau keabu */
 }
 
-/* ===============================
+/* =========================================
    🌙 Dark Mode (Toggle Class-Based)
-   =============================== */
+   ========================================= */
 .dark {
-  --background: #0D1B16;         /* gelapagelap */
-  --foreground: #F9FAF9;         /* textterang */
+  --background: #0D1B16;         /* 🌙 hijau sangat tua (background gelap) */
+  --foreground: #A3B5A1;         /* teks utama dark: hijau keabu */
+  --subtext: #A3B5A1;            /* teks pendukung dark: hijau keabu */
+  --button-bg: #A3B5A1;          /* tombol utama dark: hijau keabu */
+  --button-text: #204B38;        /* teks tombol dark: hijau tua */
 }
 
-/* ===============================
+/* =========================================
    📱 Layout & Typography
-   =============================== */
+   ========================================= */
 html,
 body {
   max-width: 100vw;
@@ -34,4 +40,32 @@ body {
   background: var(--background);
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
+}
+
+/* =========================================
+   🔘 Komponen: Tombol Utama
+   ========================================= */
+.btn-primary {
+  @apply px-4 py-2 rounded font-semibold transition duration-200 hover:opacity-90;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+}
+
+/* =========================================
+   📦 Komponen: Card (Box/Container)
+   ========================================= */
+.card {
+  @apply rounded shadow-sm p-4;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.dark .card {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* =========================================
+   ✍️ Utility: Teks Sub atau Keterangan
+   ========================================= */
+.text-subtle {
+  color: var(--subtext);
 }

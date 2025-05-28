@@ -102,7 +102,7 @@ serve(async (req: Request): Promise<Response> => {
           </p>
         </div>
       `,
-      attachments: [] // tidak perlu lagi logo via attachment
+      attachments: []
     })
 
     return new Response(JSON.stringify({ success: true }), {

@@ -1,7 +1,7 @@
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { schema } from "../components/client/types"
-import type { FormData } from "../components/client/types"
+import type { FormData, Holiday } from "../components/client/types"
 import ClientFormStatic from "../components/client/ClientFormStatic"
 import ClientFormApps from "../components/client/ClientFormApps"
 import ClientFormSchedule from "../components/client/ClientFormSchedule"
@@ -9,7 +9,7 @@ import { hitungJarak } from "../lib/utils"
 import { supabase } from "../lib/supabase"
 import Navbar from "../components/Navbar"
 import Footer from "../components/Footer"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface Payload {
   nama: string
@@ -24,8 +24,12 @@ interface Payload {
   status: "pending"
 }
 
+const normalizeSlot = (s: string) =>
+  s.replace(/[–—−]/g, "-").toLowerCase().trim()
+
 const ClientDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [holidays, setHolidays] = useState<Holiday[]>([])
 
   const {
     register,
@@ -51,25 +55,99 @@ const ClientDashboard = () => {
     control,
   })
 
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      const { data, error } = await supabase.from("holidays").select("*")
+      if (!error && data) {
+        const formatted = (data as Holiday[]).map((h) => ({
+          ...h,
+          tanggal: h.tanggal.trim().toLowerCase(),
+          jam: h.jam ? normalizeSlot(h.jam) : null,
+        }))
+        setHolidays(formatted)
+        console.log("✅ Holidays loaded:", formatted)
+      } else {
+        console.error("❌ Gagal ambil libur:", error)
+      }
+    }
+    fetchHolidays()
+  }, [])
+
   const ambilWaktuServer = async (): Promise<Date> => {
     const resTime = await supabase.rpc("get_current_time")
     if (!resTime.data) throw new Error("Gagal ambil waktu server")
     return new Date(resTime.data)
   }
 
-  const validasiTanggal = (tanggalUser: Date, serverNow: Date) => {
-    const tUser = new Date(tanggalUser)
-    tUser.setHours(0, 0, 0, 0)
-    const tServer = new Date(serverNow)
-    tServer.setHours(0, 0, 0, 0)
-    if (tUser < tServer) throw new Error("Tanggal yang dipilih sudah lewat.")
+  const validasiTanggalDanJam = (tanggalUser: Date, jam: string, now: Date) => {
+    const tanggalStr = tanggalUser.toISOString().split("T")[0]
+    const nowStr = now.toISOString().split("T")[0]
+
+    const isToday = tanggalStr === nowStr
+    if (tanggalStr < nowStr) {
+      throw new Error("Tanggal yang dipilih sudah lewat.")
+    }
+
+    if (isToday) {
+      const jamMap: Record<string, string> = {
+        "09.00–11.00": "09:00",
+        "11.00–13.00": "11:00",
+        "13.30–15.30": "13:30",
+        "16.00–18.00": "16:00",
+        "19.00–21.00": "19:00",
+      }
+      const jamMulai = jamMap[jam]
+      if (jamMulai && now.toTimeString().slice(0, 5) >= jamMulai) {
+        throw new Error(`Slot ${jam} sudah dimulai atau lewat.`)
+      }
+    }
   }
 
-  const cekLokasiDanJarak = async (): Promise<{ lat: number; lng: number; jarak: number }> => {
-    if (!navigator.geolocation) throw new Error("Browser Anda tidak mendukung fitur lokasi.")
+  const cekSlot = async (tanggal: Date, jam: string) => {
+    const tanggalStr = tanggal.toISOString().split("T")[0]
+    const slotNorm = normalizeSlot(jam)
+
+    const { data: existing, error } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("tanggal", tanggalStr)
+      .eq("jam", jam)
+      .in("status", ["pending", "confirmed"])
+
+    if (error) throw new Error("Error saat cek slot booking.")
+    if (existing && existing.length > 0)
+      throw new Error(`Slot ${jam} pada ${tanggalStr} sudah dibooking.`)
+
+    const hari = tanggal.toLocaleDateString("id-ID", { weekday: "long" }).toLowerCase()
+    const slotLibur = holidays.some((h) => {
+      const cocokTanggal =
+        h.type === "date" &&
+        h.tanggal === tanggalStr &&
+        (!h.jam || h.jam === slotNorm)
+      const cocokHari =
+        h.type === "weekday" &&
+        h.tanggal === hari &&
+        h.repeat &&
+        (!h.jam || h.jam === slotNorm)
+      return cocokTanggal || cocokHari
+    })
+
+    if (slotLibur)
+      throw new Error(`Slot ${jam} pada ${tanggalStr} tidak tersedia (libur).`)
+  }
+
+  const cekLokasiDanJarak = async (): Promise<{
+    lat: number
+    lng: number
+    jarak: number
+  }> => {
+    if (!navigator.geolocation)
+      throw new Error("Browser Anda tidak mendukung fitur lokasi.")
 
     if (navigator.permissions) {
-      const perm = await navigator.permissions.query({ name: "geolocation" as PermissionName })
+      const perm = await navigator.permissions.query({
+        name: "geolocation" as PermissionName,
+      })
       if (perm.state === "denied") throw new Error("Izin lokasi ditolak.")
     }
 
@@ -84,20 +162,9 @@ const ClientDashboard = () => {
     const lat = posisi.coords.latitude
     const lng = posisi.coords.longitude
     const jarak = hitungJarak(lat, lng, -3.339456, 114.619209)
-    if (jarak > 36) throw new Error(`Lokasi di luar jangkauan (±${jarak.toFixed(2)} km).`)
+    if (jarak > 36)
+      throw new Error(`Lokasi di luar jangkauan (±${jarak.toFixed(2)} km).`)
     return { lat, lng, jarak }
-  }
-
-  const cekSlot = async (tanggal: Date, jam: string) => {
-    const tanggalStr = tanggal.toISOString().split("T")[0]
-    const { data: existing, error } = await supabase
-      .from("appointments")
-      .select("id")
-      .eq("tanggal", tanggalStr)
-      .eq("jam", jam)
-      .in("status", ["pending", "confirmed"])
-    if (error) throw new Error("Error cek slot.")
-    if (existing && existing.length > 0) throw new Error(`Slot ${jam} pada ${tanggalStr} sudah dibooking.`)
   }
 
   const simpanKeSupabase = async (payload: Payload) => {
@@ -113,16 +180,16 @@ const ClientDashboard = () => {
     })
     if (!res.ok) throw new Error("Gagal mengirim notifikasi email ke admin.")
     const hasil = await res.json()
-    console.log("Notify response:", hasil)
+    console.log("📩 Notify response:", hasil)
   }
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
     try {
       const serverNow = await ambilWaktuServer()
-      validasiTanggal(data.tanggal, serverNow)
-      const { lat, lng, jarak } = await cekLokasiDanJarak()
+      validasiTanggalDanJam(data.tanggal, data.jam!, serverNow)
       await cekSlot(data.tanggal, data.jam!)
+      const { lat, lng, jarak } = await cekLokasiDanJarak()
 
       const tanggalStr = data.tanggal.toISOString().split("T")[0]
       const payload: Payload = {
@@ -132,7 +199,7 @@ const ClientDashboard = () => {
         permintaan: data.permintaan,
         tambahan: null,
         aplikasi_custom: data.aplikasi_custom?.length
-          ? data.aplikasi_custom.map(app => `${app.nama} (${app.versi})`)
+          ? data.aplikasi_custom.map((app) => `${app.nama} (${app.versi})`)
           : null,
         tanggal: tanggalStr,
         jam: data.jam!,
@@ -140,8 +207,8 @@ const ClientDashboard = () => {
         status: "pending",
       }
 
-      await kirimEmailAdmin({ ...payload, jarak }) // Kirim email lebih dulu
-      await simpanKeSupabase(payload) // Baru simpan jika email sukses
+      await kirimEmailAdmin({ ...payload, jarak })
+      await simpanKeSupabase(payload)
 
       alert("✅ Janji berhasil dibuat.")
     } catch (err: unknown) {
@@ -156,18 +223,33 @@ const ClientDashboard = () => {
     }
   }
 
+  const tanggalTerpilih = watch("tanggal")
+
   return (
     <>
       <Navbar />
       <main className="min-h-screen px-4 py-8 max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-hijautua mb-6 text-center">Buat Janji Rawat Komputer</h1>
+        <h1 className="text-2xl font-bold text-center text-[var(--foreground)] mb-6">
+          Buat Janji Rawat Komputer
+        </h1>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <ClientFormStatic register={register} errors={errors} />
-          <ClientFormApps fields={fields} append={append} remove={remove} register={register} />
-          <ClientFormSchedule control={control} register={register} errors={errors} selectedDate={watch('tanggal')} />
+          <ClientFormApps
+            fields={fields}
+            append={append}
+            remove={remove}
+            register={register}
+          />
+          <ClientFormSchedule
+            control={control}
+            register={register}
+            errors={errors}
+            selectedDate={tanggalTerpilih}
+            holidays={holidays}
+          />
           <button
             type="submit"
-            className="bg-hijautua text-hijaulakeabu px-4 py-2 rounded hover:bg-opacity-90 disabled:opacity-50"
+            className="btn-primary w-full disabled:opacity-50"
             disabled={isSubmitting}
           >
             {isSubmitting ? "⏳ Membuat Janji..." : "Buat Janji"}

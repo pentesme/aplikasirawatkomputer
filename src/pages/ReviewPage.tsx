@@ -66,7 +66,7 @@ const ReviewPage = () => {
     <>
       <Navbar />
       <main className="min-h-screen px-4 py-10 max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-center text-hijautua dark:text-hijaulakeabu mb-6">
+        <h1 className="text-2xl font-bold text-center text-[var(--foreground)] mb-6">
           Review Layanan RawatKomputer
         </h1>
 
@@ -79,17 +79,19 @@ const ReviewPage = () => {
             Terima kasih atas review Anda 🙏
           </p>
         ) : (
-          <>
-            <div className="space-y-2 text-sm text-hijautua dark:text-hijaulakeabu mb-4">
+          <div className="card space-y-4">
+            <div className="space-y-2 text-sm text-[var(--foreground)]">
               <p><strong>Nama:</strong> {appointment?.nama}</p>
               <p><strong>Tanggal:</strong> {appointment?.tanggal}</p>
               <p><strong>Jam:</strong> {appointment?.jam}</p>
             </div>
 
-            <div className="mb-4">
-              <label className="block mb-1 font-medium">Tulis Review Anda:</label>
+            <div>
+              <label className="block mb-1 font-medium text-[var(--foreground)]">
+                Tulis Review Anda:
+              </label>
               <textarea
-                className="w-full p-2 border rounded min-h-[100px]"
+                className="w-full p-2 border rounded min-h-[100px] bg-transparent text-[var(--foreground)] placeholder:text-[var(--subtext)]"
                 value={review}
                 onChange={(e) => setReview(e.target.value)}
               />
@@ -97,11 +99,11 @@ const ReviewPage = () => {
 
             <button
               onClick={handleSubmit}
-              className="bg-hijautua text-hijaulakeabu px-4 py-2 rounded hover:opacity-90"
+              className="btn-primary w-full"
             >
               Kirim Review
             </button>
-          </>
+          </div>
         )}
       </main>
       <Footer />
