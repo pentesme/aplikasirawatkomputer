@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin
+Disallow: /admin/login
+Disallow: /review
+Disallow: /notfound
+Allow: /
+
+Sitemap: https://rawatkomputer.muftyexperiences.com/sitemap.xml

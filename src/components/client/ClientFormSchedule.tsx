@@ -6,11 +6,10 @@ import type { FormData, Holiday } from "./types"
 import { supabase } from "../../lib/supabase"
 
 const RAW_SLOT_JAM = [
-  "09.00–11.00",
-  "11.00–13.00",
-  "13.30–15.30",
-  "16.00–18.00",
-  "19.00–21.00",
+  "09.00–11.30",
+  "12.00–14.30",
+  "15.00–17.30",
+  "19.00–21.30",
 ] as const
 
 const normalize = (str: string) =>
@@ -19,11 +18,10 @@ const normalize = (str: string) =>
 const SLOT_JAM = RAW_SLOT_JAM.map(normalize)
 
 const JAM_MAP: Record<string, string> = {
-  "09.00-11.00": "09:00",
-  "11.00-13.00": "11:00",
-  "13.30-15.30": "13:30",
-  "16.00-18.00": "16:00",
-  "19.00-21.00": "19:00",
+  "09.00-11.30": "09:00",
+  "12.00-14.30": "12:00",
+  "15.00-17.30": "15:00",
+  "19.00-21.30": "19:00",
 }
 
 type Props = {

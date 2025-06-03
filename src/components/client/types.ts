@@ -1,5 +1,15 @@
 import { z } from "zod"
 
+// ✅ Struktur slot waktu aman
+export const slotTimeMap = {
+  "09.00–11.30": "09:00",
+  "12.00–14.30": "12:00",
+  "15.00–17.30": "15:00",
+  "19.00–21.30": "19:00",
+} as const
+
+export const slotTimeList = Object.keys(slotTimeMap) as (keyof typeof slotTimeMap)[]
+
 export const schema = z.object({
   nama: z.string().min(1, "Nama wajib diisi"),
   email: z.string().email("Format email tidak valid"),
@@ -24,11 +34,10 @@ export const schema = z.object({
     invalid_type_error: "Format tanggal tidak valid",
   }),
   jam: z.enum([
-    "09.00–11.00",
-    "11.00–13.00",
-    "13.30–15.30",
-    "16.00–18.00",
-    "19.00–21.00",
+    "09.00–11.30",
+    "12.00–14.30",
+    "15.00–17.30",
+    "19.00–21.30",
   ]),
 })
 
@@ -48,3 +57,29 @@ export interface LokasiUser {
   lat: number
   lng: number
 }
+
+export const SLOT_JAM = [
+  "09.00–11.30",
+  "12.00–14.30",
+  "15.00–17.30",
+  "19.00–21.30",
+] as const
+
+export const JAM_MAP: Record<string, string> = {
+  "09.00–11.30": "09:00",
+  "12.00–14.30": "12:00",
+  "15.00–17.30": "15:00",
+  "19.00–21.30": "19:00",
+}
+
+// 🆕 JAM_MAP untuk akhir slot (digunakan untuk validasi)
+export const SLOT_JAM_END: Record<string, string> = {
+  "09.00–11.30": "11:30",
+  "12.00–14.30": "14:30",
+  "15.00–17.30": "17:30",
+  "19.00–21.30": "21:30",
+}
+
+// Fungsi normalizeSlot agar bisa digunakan di berbagai file
+export const normalizeSlot = (s: string): string =>
+  s.replace(/[–—−]/g, "-").toLowerCase().trim()

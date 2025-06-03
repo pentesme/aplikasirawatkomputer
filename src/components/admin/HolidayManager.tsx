@@ -2,11 +2,10 @@ import { useState, useEffect } from "react"
 import { supabase } from "../../lib/supabase"
 
 const SLOT_JAM = [
-  "09.00–11.00",
-  "11.00–13.00",
-  "13.30–15.30",
-  "16.00–18.00",
-  "19.00–21.00",
+  "09.00–11.30",
+  "12.00–14.30",
+  "15.00–17.30",
+  "19.00–21.30",
 ]
 
 const WEEKDAYS = ["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu"]

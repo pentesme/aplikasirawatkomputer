@@ -1,6 +1,6 @@
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { schema } from "../components/client/types"
+import { schema, SLOT_JAM_END } from "../components/client/types"
 import type { FormData, Holiday } from "../components/client/types"
 import ClientFormStatic from "../components/client/ClientFormStatic"
 import ClientFormApps from "../components/client/ClientFormApps"
@@ -23,9 +23,6 @@ interface Payload {
   lokasi_user: { lat: number; lng: number }
   status: "pending"
 }
-
-const normalizeSlot = (s: string) =>
-  s.replace(/[–—−]/g, "-").toLowerCase().trim()
 
 const ClientDashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -62,7 +59,7 @@ const ClientDashboard = () => {
         const formatted = (data as Holiday[]).map((h) => ({
           ...h,
           tanggal: h.tanggal.trim().toLowerCase(),
-          jam: h.jam ? normalizeSlot(h.jam) : null,
+          jam: h.jam ? h.jam.trim().toLowerCase() : null,
         }))
         setHolidays(formatted)
         console.log("✅ Holidays loaded:", formatted)
@@ -76,7 +73,12 @@ const ClientDashboard = () => {
   const ambilWaktuServer = async (): Promise<Date> => {
     const resTime = await supabase.rpc("get_current_time")
     if (!resTime.data) throw new Error("Gagal ambil waktu server")
-    return new Date(resTime.data)
+
+    console.log("🌐 Waktu server mentah:", resTime.data)
+    const waktuServer = new Date(resTime.data)
+    console.log("🧭 Waktu server objek:", waktuServer.toISOString())
+
+    return waktuServer
   }
 
   const validasiTanggalDanJam = (tanggalUser: Date, jam: string, now: Date) => {
@@ -89,23 +91,30 @@ const ClientDashboard = () => {
     }
 
     if (isToday) {
-      const jamMap: Record<string, string> = {
-        "09.00–11.00": "09:00",
-        "11.00–13.00": "11:00",
-        "13.30–15.30": "13:30",
-        "16.00–18.00": "16:00",
-        "19.00–21.00": "19:00",
-      }
-      const jamMulai = jamMap[jam]
-      if (jamMulai && now.toTimeString().slice(0, 5) >= jamMulai) {
-        throw new Error(`Slot ${jam} sudah dimulai atau lewat.`)
+      const jamAkhir = SLOT_JAM_END[jam]
+      if (!jamAkhir) throw new Error("Format slot tidak valid.")
+
+      const waktuAkhirSlot = new Date(Date.UTC(
+        tanggalUser.getUTCFullYear(),
+        tanggalUser.getUTCMonth(),
+        tanggalUser.getUTCDate(),
+        parseInt(jamAkhir.split(":")[0]),
+        parseInt(jamAkhir.split(":")[1])
+      ))
+
+      console.log("📆 Tanggal dipilih:", tanggalStr)
+      console.log("🕐 Slot jam:", jam, "→", jamAkhir)
+      console.log("⏳ Waktu akhir slot (GMT+8 → UTC):", waktuAkhirSlot.toISOString())
+      console.log("🌐 Sekarang (server UTC):", now.toISOString())
+
+      if (now >= waktuAkhirSlot) {
+        throw new Error(`Slot ${jam} sudah selesai atau sedang berlangsung.`)
       }
     }
   }
 
   const cekSlot = async (tanggal: Date, jam: string) => {
     const tanggalStr = tanggal.toISOString().split("T")[0]
-    const slotNorm = normalizeSlot(jam)
 
     const { data: existing, error } = await supabase
       .from("appointments")
@@ -115,25 +124,27 @@ const ClientDashboard = () => {
       .in("status", ["pending", "confirmed"])
 
     if (error) throw new Error("Error saat cek slot booking.")
-    if (existing && existing.length > 0)
+    if (existing && existing.length > 0) {
       throw new Error(`Slot ${jam} pada ${tanggalStr} sudah dibooking.`)
+    }
 
     const hari = tanggal.toLocaleDateString("id-ID", { weekday: "long" }).toLowerCase()
     const slotLibur = holidays.some((h) => {
       const cocokTanggal =
         h.type === "date" &&
         h.tanggal === tanggalStr &&
-        (!h.jam || h.jam === slotNorm)
+        (!h.jam || h.jam === jam)
       const cocokHari =
         h.type === "weekday" &&
         h.tanggal === hari &&
         h.repeat &&
-        (!h.jam || h.jam === slotNorm)
+        (!h.jam || h.jam === jam)
       return cocokTanggal || cocokHari
     })
 
-    if (slotLibur)
+    if (slotLibur) {
       throw new Error(`Slot ${jam} pada ${tanggalStr} tidak tersedia (libur).`)
+    }
   }
 
   const cekLokasiDanJarak = async (): Promise<{
@@ -162,7 +173,7 @@ const ClientDashboard = () => {
     const lat = posisi.coords.latitude
     const lng = posisi.coords.longitude
     const jarak = hitungJarak(lat, lng, -3.339456, 114.619209)
-    if (jarak > 36)
+    if (jarak > 27)
       throw new Error(`Lokasi di luar jangkauan (±${jarak.toFixed(2)} km).`)
     return { lat, lng, jarak }
   }
